@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { Image, StyleSheet, Button, Text, TouchableOpacity, View } from 'react-native';
 import { allEmblems } from './DataSource';
+import SettingsScreen from './SettingsScreen'
 
 const prevStackMaxSize = 3;
 
 export default function Emblems(props) {
-    const useRandom = true;
+    const [useRandom, setUseRandom] = useState(true);
     const [currInd, setCurrInd] = useState(getRandomIndex());
     const [prevStack, setPrevStack] = useState([]);
     const [prevButtonEnabled, setPrevButtonEnabled] = useState(false);
     const [isVisible, setVisible] = useState(false);
+    const [settingsVisible, setSettingsVisible] = useState(false);
 
     const getPrevious = () => {
         if (useRandom) {
@@ -42,12 +44,27 @@ export default function Emblems(props) {
         setVisible(false);
     }
 
+    const updateSetting = (setting, value) => {
+        console.log("updateSetting, setting: " + setting);
+        switch (setting) {
+            case 'random':
+                setUseRandom(value);
+                break;
+        }
+    }
+
+    const closeSettingsDialog = () => { setSettingsVisible(false) }
+
     let communityName = isVisible ? allEmblems[currInd].name : "";
 
-    return (
-        <View style={styles.container}>
+    return settingsVisible
+        ? <SettingsScreen updateSetting={updateSetting} closeDialog={closeSettingsDialog} isRandom={useRandom} />
+        : (<View style={styles.container}>
+            <TouchableOpacity activeOpacity={0.2} style={styles.settingsContainer} onPress={() => setSettingsVisible(true)}>
+                <Image source={require('./assets/settings.jpg')} style={styles.settings} />
+            </TouchableOpacity>
             <TouchableOpacity activeOpacity={0.8} onPress={() => setVisible(true)}>
-                <Image source={{ uri: allEmblems[currInd].url }} style={styles.logo} />
+                <Image source={{ uri: allEmblems[currInd].url }} style={styles.emblem} />
             </TouchableOpacity>
             <View style={styles.communityNameLayout}>
                 <Text style={styles.communityName}>{communityName}</Text>
@@ -63,8 +80,7 @@ export default function Emblems(props) {
                     onPress={getNext}
                 />
             </View>
-        </View>
-    );
+        </View>);
 }
 
 function getRandomIndex(currInd) {
@@ -73,8 +89,8 @@ function getRandomIndex(currInd) {
         newInd = Math.floor(Math.random() * allEmblems.length);
     } while (newInd == currInd);
     return newInd;
-  }
-  
+}
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -82,10 +98,19 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         justifyContent: 'center'
     },
-    logo: {
+    settingsContainer: {
+        flexDirection: 'row',
+        justifyContent: "flex-end"
+    },
+    emblem: {
         width: 290,
         height: 350,
         marginBottom: 10,
+    },
+    settings: {
+        width: 20,
+        height: 20,
+        marginBottom: 20,
     },
     communityName: {
         color: '#888',
