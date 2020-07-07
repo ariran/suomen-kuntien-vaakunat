@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { Image, StyleSheet, Button, Text, TouchableOpacity, View } from 'react-native';
+import { Asset } from 'expo-asset';
+import { AppLoading } from 'expo';
 import { allEmblems } from './DataSource';
 import SettingsScreen from './SettingsScreen'
 
 const prevStackMaxSize = 3;
 
 export default function Emblems(props) {
+    const [isReady, setIsReady] = useState(false);
     const [useRandom, setUseRandom] = useState(true);
     const [currInd, setCurrInd] = useState(getRandomIndex());
     const [prevStack, setPrevStack] = useState([]);
@@ -17,7 +20,6 @@ export default function Emblems(props) {
         if (useRandom) {
             if (prevStack.length > 0) {
                 setCurrInd(prevStack.pop());
-                console.log("After pop: " + prevStack)
             }
             if (prevStack.length === 0) {
                 setPrevButtonEnabled(false);
@@ -32,10 +34,8 @@ export default function Emblems(props) {
         if (useRandom) {
             if (prevStack.length >= prevStackMaxSize) {
                 prevStack.shift();
-                console.log("After shift: " + prevStack)
             }
             prevStack.push(currInd);
-            console.log("After push: " + prevStack)
             setPrevButtonEnabled(true);
             setCurrInd(getRandomIndex());
         } else if (currInd < allEmblems.length - 1) {
@@ -44,27 +44,47 @@ export default function Emblems(props) {
         setVisible(false);
     }
 
-    const updateSetting = (setting, value) => {
-        console.log("updateSetting, setting: " + setting);
+    const updateSettings = (setting, value) => {
         switch (setting) {
             case 'random':
                 setUseRandom(value);
+                if (!value) {
+                    setPrevButtonEnabled(true);
+                }
                 break;
         }
     }
 
     const closeSettingsDialog = () => { setSettingsVisible(false) }
 
+    const cacheResourcesAsync = async () => {
+        const images = [require('./assets/settings.jpg')];
+        const cacheImages = images.map(image => {
+            return Asset.fromModule(image).downloadAsync();
+        });
+        return Promise.all(cacheImages);
+    }
+
     let communityName = isVisible ? allEmblems[currInd].name : "";
 
+    if (!isReady) {
+        return (
+            <AppLoading
+                startAsync={cacheResourcesAsync}
+                onFinish={() => setIsReady(true)}
+                onError={console.warn}
+            />
+        );
+    }
+
     return settingsVisible
-        ? <SettingsScreen updateSetting={updateSetting} closeDialog={closeSettingsDialog} isRandom={useRandom} />
+        ? <SettingsScreen updateSettings={updateSettings} closeDialog={closeSettingsDialog} isRandom={useRandom} />
         : (<View style={styles.container}>
             <TouchableOpacity activeOpacity={0.2} style={styles.settingsContainer} onPress={() => setSettingsVisible(true)}>
                 <Image source={require('./assets/settings.jpg')} style={styles.settings} />
             </TouchableOpacity>
             <TouchableOpacity activeOpacity={0.8} onPress={() => setVisible(true)}>
-                <Image source={{ uri: allEmblems[currInd].url }} style={styles.emblem} />
+                <Image source={{ uri: allEmblems[currInd].url }} style={styles.emblem} resizeMethod="scale" resizeMode="contain" />
             </TouchableOpacity>
             <View style={styles.communityNameLayout}>
                 <Text style={styles.communityName}>{communityName}</Text>
@@ -103,8 +123,8 @@ const styles = StyleSheet.create({
         justifyContent: "flex-end"
     },
     emblem: {
-        width: 290,
-        height: 350,
+        width: 270,
+        height: 330,
         marginBottom: 10,
     },
     settings: {
@@ -114,7 +134,7 @@ const styles = StyleSheet.create({
     },
     communityName: {
         color: '#888',
-        fontSize: 42,
+        fontSize: 28,
         marginBottom: 10
     },
     communityNameLayout: {

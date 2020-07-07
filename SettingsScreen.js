@@ -5,7 +5,7 @@ export default function SettingsScreen(props) {
     const [isRandom, setIsRandom] = useState(props.isRandom);
     const toggleSwitch = (e) => {
         setIsRandom(!isRandom);
-        props.updateSetting('random', e);
+        props.updateSettings('random', e);
     };
 
     return (
@@ -38,7 +38,8 @@ const styles = StyleSheet.create({
     },
     title: {
         color: '#888',
-        fontSize: 42,
+        fontSize: 28,
+        marginTop: 50,
         marginBottom: 30
     },
     settingText: {
